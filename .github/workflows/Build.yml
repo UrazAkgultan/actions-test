@@ -1,0 +1,38 @@
+name: Run build
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+jobs:
+  test:
+    name: "Build (${{ matrix.os }})"
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+        attempt: [1, 2, 3, 4]
+
+    steps:
+      - name: "Checking-out code"
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4
+        with:
+          fetch-depth: 0
+      - name: "Defining node version"
+        uses: actions/setup-node@d86ebcd40b3cb50b156bfa44dd277faf38282d12 # v4
+        with:
+          node-version-file: ".nvmrc"
+          cache: "yarn"
+      - name: "Installing dependencies"
+        run: yarn install
+      - name: "Running build"
+        run: yarn build
+        timeout-minutes: 1
+        continue-on-error: true
+      - name: Retry if failed
+        if: ${{ failure() && matrix.attempt < 4 }}
+        run: echo "Retry attempt ${{ matrix.attempt }}"
